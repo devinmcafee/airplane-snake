@@ -1,0 +1,158 @@
+<html>
+  <body>
+    <style>
+      body {
+        background-color: black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+      }
+      button {
+         margin-bottom: 30px; padding: 20px; background-color: turquoise;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        background-color: black;
+        border: 1px solid white;
+      }
+    </style>
+    <button id="begin">
+     BEGIN
+    </button>
+    <canvas id="game" height=500 width=500 />
+<script>
+const startButton = document.getElementById("begin")
+const canvas = document.getElementById("game")
+const c = canvas.getContext("2d")
+startButton.addEventListener("click", startGame)
+const DOWN = 'DOWN', UP = 'UP', LEFT = 'LEFT', RIGHT = 'RIGHT'
+
+function startGame() {
+  const state = {
+    direction: DOWN,
+    previousDirection: DOWN,
+    apple: [100, 100],
+    score: 0,
+    sections: [
+      [250, 250],
+      [250, 240],
+      [250, 230],
+      [250, 220],
+      [250, 210],
+      [250, 200],
+      [250, 190],
+    ]
+  }
+
+  c.lineWidth = 10
+  window.addEventListener("keydown", changeDirection)
+  const tickId = window.setInterval(tick, 60)
+  function clear() {
+    c.clearRect(0,0,500,500)
+  }
+  function drawSnake() {
+    c.strokeStyle = 'green'
+    const [ head, ...rest ] = state.sections
+    c.beginPath()
+    c.moveTo(...head)
+    for (section of rest) {
+      c.lineTo(...section)
+    }
+    c.stroke()
+    c.closePath()
+  }
+  function drawApple() {
+    c.strokeStyle = 'red'
+    c.beginPath()
+    c.moveTo(state.apple[0], state.apple[1] - 5)
+    c.lineTo(state.apple[0], state.apple[1] + 5)
+    c.stroke()
+    c.closePath()
+  }
+  function gameOver() {
+    window.clearInterval(tickId)
+    clear()
+    alert("Game Over! You scored: " + state.score)		
+  }
+  function randomBoundedCoordinate() {
+    return 10 * Math.floor(Math.random() * 49) + 10
+  }
+  function newRandomCoords() {
+    let newX, newY
+    do {
+      newX = randomBoundedCoordinate()
+      newY = randomBoundedCoordinate()
+    } while (
+      state.sections.find(function(section) {
+        return section[0] === newX && section[1] === newY
+      }) !== undefined)
+    return [newX, newY]
+  }
+  function move(dx, dy) {
+    function ranIntoSelf() {
+      return state.sections.
+        find(function(section) {
+          return section[0] === newHeadX && section[1] === newHeadY
+        }) !== undefined
+    }
+    function ranIntoBorder() {
+      return newHeadX > 500 || newHeadX < 0 || newHeadY > 500 || newHeadY < 0
+    }
+    function ate() {
+      return newHeadX === state.apple[0] && newHeadY === state.apple[1]
+    }
+    const oldHead = state.sections[0]
+    const middle = state.sections.slice(1)
+    const newHeadX = oldHead[0] + dx
+    const newHeadY = oldHead[1] + dy
+
+    if (ranIntoSelf() || ranIntoBorder()) {
+      return gameOver()
+    } else if (ate()) {
+      // make new apple
+      state.apple = [ ...newRandomCoords() ]
+      state.score += 1 
+    } else {
+      middle.splice(middle.length - 1, 1)
+    }
+    
+    const newHead = [newHeadX, newHeadY]   
+    state.sections = [newHead, oldHead, ...middle]
+  }
+  function tick() {
+    state.previousDirection = state.direction
+    if (state.direction === DOWN) {
+      move(0, 10)
+    } else if (state.direction === UP) {
+      move(0, -10)
+    } else if (state.direction === LEFT) {
+      move(-10, 0)
+    } else if (state.direction === RIGHT) {
+      move(10, 0)
+    } else {
+      debugger
+      alert("INVALID DIRECTION!!!")
+    }
+    clear()
+    drawApple()
+    drawSnake()
+  }
+  function changeDirection(event) {
+    if (event.keyCode === 40 && state.previousDirection !== UP) {
+      state.direction = DOWN
+    } else if (event.keyCode === 38 && state.previousDirection !== DOWN) {
+      state.direction = UP
+    } else if (event.keyCode === 37 && state.previousDirection !== RIGHT) {
+      state.direction = LEFT
+    } else if (event.keyCode === 39 && state.previousDirection !== LEFT) {
+      state.direction = RIGHT
+    }
+  }
+}
+</script>
+  </body>
+</html>
